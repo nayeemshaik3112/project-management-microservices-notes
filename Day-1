@@ -5,3 +5,10 @@ Endpoints
 - http://localhost:8082/users/ POST
 - http://localhost:8082/users/admin2 GET
 
+Complete Day-1 Plan
+
+Step 1  user-service (DONE)
+Step 2  config-server
+Step 3  service-registry (Eureka)
+Step 4  connect user-service to config-server
+Step 5  register user-service with Eureka
