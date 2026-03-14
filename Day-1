@@ -8,7 +8,51 @@ Endpoints
 Complete Day-1 Plan
 
 Step 1  user-service (DONE)
-Step 2  config-server
+Step 2 ver config-ser
 Step 3  service-registry (Eureka)
 Step 4  connect user-service to config-server
 Step 5  register user-service with Eureka
+
+user-service is done and running successfully like a seprate microservice
+
+Config-server: It is a centrailized configuration service that stored all th yml files and it is been accessed with the git hub repo
+Flow:
+                    GitHub
+   project-management-config-repo
+                     ↑
+                     │
+               Config Server
+                 (port 8888)
+                     ↑
+                     │
+ ┌─────────────┬─────────────┬─────────────┬─────────────┐
+ user-service   project-service   task-service   auth-service
+
+ It stores all yml files. 
+
+ What is missing right know?
+ Services not yet connected to communicate or work together.
+ We need service discovery , services must come to know where is user, where is project services...
+
+ Instead of hardcoding we use Service Registry
+
+ WIth service registry
+
+                 API Gateway
+                     │
+                     │
+             Service Registry
+                     │
+     ┌───────────────┼───────────────┐
+     │               │               │
+ User Service    Project Service   Task Service
+     │               │               │
+  user_db        project_db        task_db
+
+
+Built the User Service separately - DONE
+Built the config Server to have application.yml's from github - DONE
+Buil the Eureka Server and it is like a phone directory, Every Service is now registered there and we donot need to remember the local host, when client ask the http request API gateway will ask Eureka Server where it is where the project is , where the user service iss. so it acts like a phone directory.
+
+Now we will implement API Gateway.
+

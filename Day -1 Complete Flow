@@ -1,0 +1,462 @@
+Read this after Day-1 is read 
+
+This is to understand the flow from API-Gateway to Eureka Server to User Service including Config Server
+
+# Spring Boot Microservices Architecture Notes (Till API Gateway)
+
+# 1. Objective
+
+The goal was to convert a **Spring Boot monolithic application** into a **Microservices Architecture** using the following core components:
+
+1. Config Server (Centralized configuration)
+2. Eureka Server (Service Registry)
+3. API Gateway (Single entry point for clients)
+4. User Service (Business service)
+5. MySQL running inside Docker
+
+This architecture enables:
+
+* Service discovery
+* Dynamic routing
+* Centralized configuration
+* Scalability
+* Loose coupling between services
+
+---
+
+# 2. Final Architecture
+
+Client
+|
+v
+API Gateway (8080)
+|
+v
+Eureka Server - Service Registry (8761)
+|
+v
+USER-SERVICE (8081)
+|
+v
+MySQL Database (Docker Container)
+
+Client never calls microservices directly.
+All requests go through the API Gateway.
+
+---
+
+# 3. Components Implemented
+
+---
+
+# 3.1 Config Server
+
+Purpose:
+Provides centralized configuration for all microservices.
+
+Instead of storing configuration in every service,
+all services can fetch configuration from the Config Server.
+
+Port:
+8888
+
+Dependency:
+spring-cloud-config-server
+
+Main Annotation:
+
+@EnableConfigServer
+
+Example application.yml
+
+server:
+port: 8888
+
+spring:
+application:
+name: config-server
+
+Flow:
+
+Microservice → Config Server → Fetch configuration
+
+---
+
+# 3.2 Eureka Service Registry
+
+Purpose:
+Eureka acts as a **Service Registry** where all microservices register themselves.
+
+Instead of hardcoding service URLs, services discover each other dynamically.
+
+Port:
+8761
+
+Dependency:
+
+spring-cloud-starter-netflix-eureka-server
+
+Main Annotation:
+
+@EnableEurekaServer
+
+Example application.yml
+
+server:
+port: 8761
+
+spring:
+application:
+name: discovery-server
+
+eureka:
+client:
+register-with-eureka: false
+fetch-registry: false
+
+Explanation:
+
+register-with-eureka = false
+Eureka server does not register itself.
+
+fetch-registry = false
+Eureka server does not fetch registry from other servers.
+
+---
+
+# 4. User Service
+
+Purpose:
+Handles user-related business logic.
+
+Example endpoint:
+
+GET /users/{username}
+
+Port:
+8081
+
+Dependencies:
+spring-boot-starter-web
+spring-cloud-starter-netflix-eureka-client
+spring-boot-starter-data-jpa
+mysql-connector
+
+Example application.yml
+
+server:
+port: 8081
+
+spring:
+application:
+name: user-service
+
+datasource:
+url: jdbc:mysql://localhost:3307/user_db
+username: root
+password: root
+
+eureka:
+client:
+service-url:
+defaultZone: http://localhost:8761/eureka
+
+instance:
+prefer-ip-address: true
+
+Explanation:
+
+spring.application.name
+
+This name is used when registering the service in Eureka.
+
+Example:
+
+USER-SERVICE → localhost:8081
+
+prefer-ip-address = true
+
+Registers the service using IP address instead of hostname.
+
+Example:
+
+192.168.x.x:8081
+
+instead of
+
+hostname:8081
+
+---
+
+# 5. API Gateway
+
+Purpose:
+Acts as a **single entry point** for all client requests.
+
+Clients never call microservices directly.
+
+Port:
+8080
+
+Dependency:
+
+spring-cloud-starter-gateway-server-webflux
+
+Example application.yml
+
+server:
+port: 8080
+
+spring:
+application:
+name: api-gateway
+
+cloud:
+gateway:
+server:
+webflux:
+routes:
+- id: user-service
+uri: lb://USER-SERVICE
+predicates:
+- Path=/users/**
+
+eureka:
+client:
+service-url:
+defaultZone: http://localhost:8761/eureka
+
+management:
+endpoints:
+web:
+exposure:
+include: "*"
+
+---
+
+# 6. Gateway Configuration Explanation
+
+Route ID
+
+id: user-service
+
+Identifier for the route.
+
+URI
+
+uri: lb://USER-SERVICE
+
+lb = Load Balancer
+
+Gateway asks Eureka:
+
+Where is USER-SERVICE?
+
+Eureka responds:
+
+localhost:8081
+
+Path Predicate
+
+Path=/users/**
+
+Any request starting with
+
+/users
+
+will be routed to USER-SERVICE.
+
+Example:
+
+http://localhost:8080/users/nayeem
+
+---
+
+# 7. Request Flow
+
+Example request:
+
+GET http://localhost:8080/users/nayeem
+
+Step 1
+
+Client sends request to API Gateway.
+
+Client → API Gateway
+
+---
+
+Step 2
+
+Gateway checks routing rules.
+
+Path = /users/**
+
+Match found.
+
+---
+
+Step 3
+
+Gateway asks Eureka:
+
+Where is USER-SERVICE?
+
+---
+
+Step 4
+
+Eureka responds:
+
+USER-SERVICE → localhost:8081
+
+---
+
+Step 5
+
+Gateway forwards request internally.
+
+http://localhost:8081/users/nayeem
+
+---
+
+Step 6
+
+User Service processes request.
+
+Controller executes:
+
+@GetMapping("/{username}")
+
+Data is retrieved from MySQL.
+
+---
+
+Step 7
+
+Response returns through Gateway.
+
+User Service → Gateway → Client
+
+---
+
+# 8. Service Discovery
+
+Without Eureka:
+
+Gateway must know:
+
+USER-SERVICE → localhost:8081
+PROJECT-SERVICE → localhost:8082
+
+Hardcoded configuration.
+
+If server changes, system breaks.
+
+With Eureka:
+
+Services register themselves automatically.
+
+Gateway discovers them dynamically.
+
+---
+
+# 9. API Gateway Benefits
+
+Single entry point for all requests.
+
+Provides:
+
+Routing
+Load balancing
+Security
+Authentication
+Rate limiting
+Logging
+Monitoring
+
+---
+
+# 10. Load Balancing
+
+Gateway can distribute traffic between multiple instances.
+
+Example:
+
+USER-SERVICE Instance 1 → 8081
+USER-SERVICE Instance 2 → 8082
+
+Gateway automatically chooses one instance.
+
+---
+
+# 11. Startup Order (Important)
+
+Microservices must start in this order:
+
+1. Config Server
+2. Eureka Server
+3. Microservices (User Service)
+4. API Gateway
+
+Reason:
+
+Microservices must register in Eureka before Gateway routes requests.
+
+---
+
+# 12. Technologies Used
+
+Spring Boot
+Spring Cloud Config
+Spring Cloud Netflix Eureka
+Spring Cloud Gateway
+Spring Data JPA
+MySQL
+Docker
+
+---
+
+# 13. What We Have Successfully Built
+
+Config Server
+Eureka Service Registry
+User Microservice
+API Gateway
+MySQL Docker Database
+Service Discovery
+Dynamic Routing
+
+This is a **production-ready microservices foundation**.
+
+---
+
+# 14. Next Step
+
+Next we will implement:
+
+PROJECT-SERVICE
+
+and enable
+
+Service-to-Service communication using OpenFeign.
+
+Architecture will become:
+
+Client
+|
+v
+API Gateway
+|
+|------ USER-SERVICE
+|
+|------ PROJECT-SERVICE
+|
+v
+USER-SERVICE
+
+This enables microservices to communicate with each other.
+
+---
+
+END OF NOTES

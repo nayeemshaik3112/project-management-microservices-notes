@@ -1,0 +1,99 @@
+Final Production Microservices Architecture (Your Project)
+                          Client
+                          │
+                          │
+                    API Gateway
+                          │
+                          │
+                  Service Registry
+                      (Eureka)
+                          │
+        ┌─────────────────┼─────────────────┐
+        │                 │                 │
+   User Service      Project Service     Task Service
+        │                 │                 │
+     user_db           project_db         task_db
+
+----------------------------------------------------------------------------------------
+
+project-management-microservices
+│
+├── config-server
+│
+├── discovery-server
+│
+├── api-gateway
+│
+├── user-service
+│
+├── project-service
+│
+├── task-service
+│
+└── docker-compose.yml
+----------------------------------------------------------------------------------------
+1.Config Server : Centralized configuration.
+----------------------------------------------------------------------------------------
+2.Discovery Server (Service Registry) - 
+Technology used: Spring Cloud Netflix Eureka
+Purpose:
+
+Microservices register themselves here.
+
+Instead of calling:
+
+http://localhost:8081/users
+
+Services call using:
+
+http://USER-SERVICE/users
+----------------------------------------------------------------------------------------
+3.API Gateway
+Purpose:
+Single entry point for all requests.
+
+Client never calls services directly.
+Instead of:
+
+client → user-service
+client → project-service
+client → task-service
+
+Client calls only:
+
+client → API Gateway
+
+Example:
+/api/users
+/api/projects
+/api/tasks
+----------------------------------------------------------------------------------------
+4.User Service
+Handles:
+
+Users
+Roles
+Authentication
+
+Database:
+
+user_db
+
+You already started this service.
+----------------------------------------------------------------------------------------
+5.Project Service
+Handles:
+Projects
+
+Database:
+project_db
+----------------------------------------------------------------------------------------
+6.Task Service
+task-service
+
+Handles:
+Tasks
+
+Database:
+task_db1
+----------------------------------------------------------------------------------------
