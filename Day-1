@@ -1,0 +1,7 @@
+Converted our Monolith Project Management Project into Microservices
+
+User - Service is working. 
+Endpoints
+- http://localhost:8082/users/ POST
+- http://localhost:8082/users/admin2 GET
+
