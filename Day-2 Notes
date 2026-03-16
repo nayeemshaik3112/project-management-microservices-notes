@@ -1,0 +1,173 @@
+1️⃣ RateLimiter (Resilience4j)
+
+Suppose your API suddenly receives too many requests.
+Normal traffic → 50 req/sec
+Sudden spike → 5000 req/sec
+
+Your service can crash due to:
+
+CPU overload
+Thread pool exhaustion
+Database overload
+
+FLow how this is working after Rate Limiter is involved
+
+Client
+ ↓
+Bulkhead 
+ ↓
+RateLimiter 
+ ↓
+Retry
+ ↓
+TimeLimiter
+ ↓
+CircuitBreaker
+ ↓
+Feign Client
+ ↓
+User Service
+------------------------------------------------------------------------
+Bulkhead
+
+Purpose:
+
+Protect threads from exhaustion
+
+Example:
+
+Too many concurrent requests → reject extra requests
+
+Exception:
+
+BulkheadFullException
+
+------------------------------------------------------------------------
+2️⃣ RateLimiter
+
+Purpose:
+
+Limit number of requests per time window
+
+Example:
+
+5 requests allowed in 10 seconds
+
+Exception:
+
+RequestNotPermitted
+------------------------------------------------------------------------
+3️⃣ Retry
+
+Purpose:
+
+Retry temporary failures
+
+Example:
+
+Attempt1 → fail
+Attempt2 → success
+------------------------------------------------------------------------
+4️⃣ TimeLimiter
+
+Purpose:
+
+Stop waiting for slow services
+
+Example:
+
+Timeout = 3 seconds
+
+Exception:
+
+TimeoutException
+------------------------------------------------------------------------
+5️⃣ CircuitBreaker
+
+Purpose:
+
+Stop repeated failing calls
+
+States:
+
+CLOSED → OPEN → HALF_OPEN
+
+Exception:
+
+CallNotPermittedException
+------------------------------------------------------------------------
+📌 Failure Protection Summary
+Pattern	Protects Against
+Bulkhead	                    thread exhaustion
+RateLimiter	                    traffic spikes
+Retry	                        temporary failure
+TimeLimiter	                    slow service
+CircuitBreaker	                repeated failures
+------------------------------------------------------------------------
+Spring Boot Actuator enpoints
+/actuator/health
+/actuator/metrics
+/actuator/info
+/actuator/circuitbreakers
+------------------------------------------------------------------------
+Micrometer
+
+Purpose:
+
+Collect application metrics
+
+Flow:
+
+Application → Micrometer → Actuator → Monitoring Tools
+
+Common metrics:
+
+http.server.requests
+jvm.memory.used
+system.cpu.usage
+process.uptime
+
+Used with:
+
+Prometheus
+Grafana
+Datadog
+------------------------------------------------------------------------
+What Distributed Tracing Does
+
+Distributed tracing assigns a Trace ID to every request.
+
+Example:
+
+Trace ID = 6f23a9d7
+
+Every service processing that request logs the same trace ID.
+
+What is Zipkin
+
+Zipkin is a distributed tracing system.
+
+It collects tracing data from all services and shows them in a UI.
+
+Zipkins UI shows
+Service call timeline
+Request latency
+Error points
+Service dependencies
+------------------------------------------------------------------------
+OBSERVABILITY:
+
+Observability means the ability to understand what is happening inside a system using external outputs.
+
+In microservices we want to answer:
+
+What happened?
+Where did it happen?
+Why did it happen?
+
+Observability is built on three core pillars.
+
+Pillar	    Purpose
+Logs	    record system events
+Metrics	    numerical measurements
+Tracing	    request journey across services
