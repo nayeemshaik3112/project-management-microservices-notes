@@ -56,3 +56,88 @@ Buil the Eureka Server and it is like a phone directory, Every Service is now re
 
 Now we will implement API Gateway.
 
+1️⃣ Problem without Circuit Breaker
+2️⃣ What Circuit Breaker actually does
+3️⃣ How Resilience4j works internally
+4️⃣ Where we apply it in our project
+5️⃣ Implementation steps
+
+My Project Service is depends on User Service, What if User service goes down then if product service is looking for user service with the feign client then user service donot send any reponse back if it is down then we will get the 500 internal server error
+
+This is called:Cascading Failure
+Circuit Breaker States has 3 states :
+1. CLOSED (Normal)
+2. OPEN (Failure Detected)
+3. HALF OPEN (Testing Phase)
+
+closed: if 10 calls from product to user then only 1 is failure that is ok
+open: if 10 calls from product to user then 6 were the failures then circuit breaker opens then requests are blocked immediately
+half open: if success Circuit closes again, if failure Circuit opens again
+
+So the flow is same , controller calls the service and inside service interface we have a method getProjectForUser and in the impl we aer impl and saying that protect this method with circuit breaker and this method getProjectForUser calls by the circuit breaker if not reaches then the fallbackMethod returs it
+
+inside yml file 
+slidingWindowSize = 10 requests monitored
+failureRateThreshold = if 50% fail → open circuit
+waitDurationInOpenState = wait 10 seconds before retry
+halfOpenCalls = allow 3 test calls
+
+One theory is when if the threshold >50% then the OPEN circuit will execute it triggers fallbackMethod() , permittedNumberOfCallsInHalfOpenState is 3 , means Circuit breaker allows few requests to check if service recovered. (if success Circuit closes again, if failure Circuit opens again)
+
+RETRY:                  Circuit:
+retry temp failures,    Stop repeated failures
+
+see in yml file : we have maxAttempts: 3,waitDuration: 2s
+Attempt 1 → fail
+(wait 2s)
+Attempt 2 → fail
+(wait 2s)
+Attempt 3 → success or fail
+
+
+Time Limiter:
+
+TimeLimiter works by waiting for a result with a timeout
+This is simple, if any of the service is depending on other service Product depend on User service. then we will set the timelimit
+  retry:
+    instances:
+      userServiceRetry:
+        maxAttempts: 3
+        waitDuration: 2s
+
+BULKHEADS:
+So if user service is not at all responding then product also get breaks , so bullkheads solves this 
+if there are 20 threadpools are waiting for user to react then threadpools counts over then if user not responds it will break the product too.
+So instead of sharing all the threads to user (20) we will islolate with dedicated threads
+Types of Bulkhead
+
+Resilience4j provides two types.
+
+Type	                        Description
+Semaphore Bulkhead	        Limits concurrent calls - mostly used
+ThreadPool Bulkhead	        Separate thread pools
+
+
+Semaphore Bulkhead:
+resilience4j:
+  bulkhead:
+    instances:
+      userServiceBulkhead:
+        maxConcurrentCalls: 5
+        maxWaitDuration: 0
+
+Meaning:
+
+Only 5 concurrent requests allowed to User Service
+
+If a 6th request arrives:
+
+Bulkhead rejects request
+Fallback executed
+
+| Layer          | Protects Against             |
+| -------------- | ---------------------------- |
+| Bulkhead       | too many concurrent requests |
+| Retry          | temporary failures           |
+| TimeLimiter    | slow responses               |
+| CircuitBreaker | repeated failures            |
