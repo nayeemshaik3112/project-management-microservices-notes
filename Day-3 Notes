@@ -1,0 +1,16 @@
+will see if time permits:
+
+Internal working of Spring Cloud components
+Advanced Resilience4j tuning
+Service communication patterns
+Scaling strategies
+-------------------------------------------------------------------------
+1.Dockerizing Microservices
+2.Docker Compose for running all services
+3.Kubernetes basics
+4.Centralized logging (ELK)
+5.API security between services 
+
+we built the docker compose and all the services are now running under Docker
+
+What is Zipkin

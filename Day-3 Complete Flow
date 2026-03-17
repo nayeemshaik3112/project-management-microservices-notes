@@ -1,0 +1,28 @@
+Client (Postman / Frontend)
+        │
+        ▼
+API Gateway (Spring Cloud Gateway)
+        │
+        ▼
+Service Registry (Eureka Server)
+        │
+        ▼
+-------------------------------------------------
+|                Microservices                  |
+|                                              |
+|   User Service        Project Service        |
+|                                              |
+-------------------------------------------------
+        │
+        ▼
+Feign Communication
+        │
+        ▼
+Resilience4j (Circuit Breaker)
+        │
+        ▼
+Fallback Method
+        │
+        ▼
+Observability Layer
+(Actuator + Micrometer + Zipkin Tracing)
