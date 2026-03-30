@@ -8,7 +8,7 @@ Endpoints
 Complete Day-1 Plan
 
 Step 1  user-service (DONE)
-Step 2 ver config-ser
+Step 2  config-service
 Step 3  service-registry (Eureka)
 Step 4  connect user-service to config-server
 Step 5  register user-service with Eureka
